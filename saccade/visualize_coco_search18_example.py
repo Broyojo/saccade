@@ -1,7 +1,7 @@
 """
 Visualize one COCO-Search18 trial:
   - full image with fixation path (segments colored by saccade amplitude)
-  - patch sequence (one patch per fixation)
+  - patch sequence (one patch per fixation) placed underneath the full image
 """
 
 from __future__ import annotations
@@ -107,9 +107,9 @@ def main() -> None:
         f"T={T} (showing {nfix})"
     )
 
-    # --- Full image + path + amplitude plot ---
-    fig = plt.figure(figsize=(14, 6), constrained_layout=True)
-    gs = fig.add_gridspec(1, 2, width_ratios=[3, 1])
+    # --- Combined figure: image/path on top, patch row on bottom ---
+    fig = plt.figure(figsize=(max(12.0, 1.9 * nfix), 8.0), constrained_layout=True)
+    gs = fig.add_gridspec(2, 2, height_ratios=[3.0, 1.2], width_ratios=[4.0, 1.3])
     ax_img = fig.add_subplot(gs[0, 0])
     ax_amp = fig.add_subplot(gs[0, 1])
 
@@ -180,17 +180,10 @@ def main() -> None:
     ax_amp.set_ylabel("deg")
     ax_amp.grid(True, alpha=0.3)
 
-    # --- Patch grid ---
     n = nfix
-    ncols = min(6, n)
-    nrows = int(math.ceil(n / ncols))
-    fig2, axes = plt.subplots(
-        nrows, ncols, figsize=(2.3 * ncols, 2.6 * nrows), constrained_layout=True
-    )
-    axes = np.atleast_1d(axes).reshape(-1)
-
-    for i in range(n):
-        ax = axes[i]
+    patch_gs = gs[1, :].subgridspec(1, n, wspace=0.05)
+    axes = [fig.add_subplot(patch_gs[0, i]) for i in range(n)]
+    for i, ax in enumerate(axes):
         p = _unnormalize(patches[i]).permute(1, 2, 0).detach().cpu().numpy()
         ax.imshow(p)
         ax.set_axis_off()
@@ -204,18 +197,12 @@ def main() -> None:
         H, W = p.shape[:2]
         ax.scatter([W / 2.0], [H / 2.0], s=16, c="red", marker="+")
 
-    for ax in axes[n:]:
-        ax.set_axis_off()
-
     if args.out_dir is not None:
         args.out_dir.mkdir(parents=True, exist_ok=True)
         stem = f"cocosearch18_idx{idx}_{condition}_{split}_subj{subject}_{target}"
-        out1 = args.out_dir / f"{stem}_path.png"
-        out2 = args.out_dir / f"{stem}_patches.png"
-        fig.savefig(out1, dpi=150)
-        fig2.savefig(out2, dpi=150)
-        print(f"Saved: {out1}")
-        print(f"Saved: {out2}")
+        out = args.out_dir / f"{stem}_overview.png"
+        fig.savefig(out, dpi=150)
+        print(f"Saved: {out}")
 
     if not args.no_show:
         plt.show()
