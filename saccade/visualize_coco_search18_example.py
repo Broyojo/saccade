@@ -80,8 +80,9 @@ def main() -> None:
     sp = ds.trials[idx]
     item = ds[idx]
 
-    xs = np.asarray(sp["X"], dtype=np.float32)
-    ys = np.asarray(sp["Y"], dtype=np.float32)
+    xy = item["fixation_xy"].detach().cpu().numpy().astype(np.int32)
+    xs = xy[:, 0].astype(np.float32)
+    ys = xy[:, 1].astype(np.float32)
     T = int(xs.shape[0])
     nfix = max(2, min(int(args.max_fix), T))
 

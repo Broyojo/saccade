@@ -270,6 +270,10 @@ class COCOSearch18Dataset(Dataset):
         xs = sp["X"]
         ys = sp["Y"]
         patches = torch.stack([self._crop_patch(img, xs[i], ys[i]) for i in range(len(xs))])
+        fixation_xy = torch.tensor(
+            [[int(round(xs[i])), int(round(ys[i]))] for i in range(len(xs))],
+            dtype=torch.int64,
+        )
 
         key = (sp["name"], int(sp["subject"]), sp["task"], sp["split"])
         amps = None
@@ -288,6 +292,7 @@ class COCOSearch18Dataset(Dataset):
 
         return {
             "patches": patches,  # [T, 3, pH, pW]
+            "fixation_xy": fixation_xy,  # [T, 2] int (x, y) in original 1680x1050 space
             "saccade_amplitude": sacc_amp,  # [T-1]
             "target": sp["task"],
             "found": found,
@@ -301,6 +306,7 @@ def collate_fn(batch: list[dict]) -> dict:
 
     patches = torch.zeros(len(batch), max_t, C, pH, pW)
     patch_mask = torch.zeros(len(batch), max_t, dtype=torch.bool)
+    fixation_xy = torch.zeros(len(batch), max_t, 2, dtype=torch.int64)
 
     # amplitude has length (T-1)
     max_s = max_t - 1
@@ -311,6 +317,7 @@ def collate_fn(batch: list[dict]) -> dict:
         t = b["patches"].shape[0]
         patches[i, :t] = b["patches"]
         patch_mask[i, :t] = True
+        fixation_xy[i, :t] = b["fixation_xy"]
 
         s = b["saccade_amplitude"].shape[0]
         sacc_amp[i, :s] = b["saccade_amplitude"]
@@ -319,6 +326,7 @@ def collate_fn(batch: list[dict]) -> dict:
     return {
         "patches": patches,
         "patch_mask": patch_mask,
+        "fixation_xy": fixation_xy,
         "saccade_amplitude": sacc_amp,
         "saccade_mask": sacc_mask,
         "target": [b["target"] for b in batch],
