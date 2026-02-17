@@ -39,7 +39,8 @@ extract_zip() {
   [[ -e "$sentinel" ]] && return
   mkdir -p "$dest_dir"
   echo "[extract]  $zip -> $dest_dir"
-  unzip -q "$zip" -d "$dest_dir"
+  # -n: never overwrite existing files (keeps the script idempotent)
+  unzip -q -n "$zip" -d "$dest_dir"
 }
 
 need_cmd wget
@@ -61,7 +62,7 @@ fi
 download "$SBU_BASE/coco_search18_fixations_TA_trainval.json" "$TA_FIX_OUT"
 
 extract_zip "$DATA_DIR/COCOSearch18-images-TP.zip" "$DATA_DIR/images/TP" "$DATA_DIR/images/TP/images"
-extract_zip "$DATA_DIR/COCOSearch18-images-TA.zip" "$DATA_DIR/images/TA" "$DATA_DIR/images/TA/images"
+extract_zip "$DATA_DIR/COCOSearch18-images-TA.zip" "$DATA_DIR/images/TA" "$DATA_DIR/images/TA/coco_search18_images_TA"
 extract_zip "$DATA_DIR/fixations/COCOSearch18-fixations-TP.zip" "$DATA_DIR/fixations/TP" "$DATA_DIR/fixations/TP/coco_search18_fixations_TP_train_split1.json"
 
 AMP_OUT="$DATA_DIR/extras/saccade_amplitude_TP_trainval.npy"

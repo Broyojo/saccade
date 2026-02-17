@@ -17,3 +17,13 @@ Quick sanity check:
 ```bash
 uv run -m saccade.coco_search18_dataset
 ```
+
+## Visualize One Trial
+```bash
+uv run -m saccade.visualize_coco_search18_example --idx 0 --max-fix 12 --boxes
+```
+
+Headless (save PNGs):
+```bash
+uv run -m saccade.visualize_coco_search18_example --idx 0 --max-fix 12 --out-dir ./vis --no-show
+```
