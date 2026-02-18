@@ -43,6 +43,17 @@ def _parse_args() -> argparse.Namespace:
         "--patch-size", type=int, nargs=2, default=(224, 224), metavar=("H", "W")
     )
     p.add_argument(
+        "--foveated-patches",
+        action="store_true",
+        help="Apply separable foveated resampling to each patch (output stays patch-size).",
+    )
+    p.add_argument(
+        "--foveated-k",
+        type=float,
+        default=2.0,
+        help="Foveation strength for --foveated-patches (0=uniform).",
+    )
+    p.add_argument(
         "--boxes", action="store_true", help="Draw patch boxes on the full image"
     )
     p.add_argument("--out-dir", type=Path, default=None, help="If set, save PNGs here")
@@ -186,7 +197,16 @@ def main() -> None:
     axes = [fig.add_subplot(patch_gs[0, i]) for i in range(n)]
     for i, ax in enumerate(axes):
         p = _unnormalize(patches[i]).permute(1, 2, 0).detach().cpu().numpy()
-        ax.imshow(p)
+        if args.foveated_patches:
+            from saccade.separable_variable_density_foveated import foveated_downscale
+
+            p8 = (p * 255.0).round().astype(np.uint8)
+            p8 = foveated_downscale(
+                p8, out_size=(int(p8.shape[0]), int(p8.shape[1])), k=float(args.foveated_k)
+            )
+            ax.imshow(p8)
+        else:
+            ax.imshow(p)
         ax.set_axis_off()
 
         if i < n - 1:

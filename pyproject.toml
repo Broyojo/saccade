@@ -3,20 +3,22 @@ name = "saccade"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
     "accelerate>=1.0.0",
     "datasets>=4.5.0",
     "gdown>=5.2.1",
     "ipykernel>=7.2.0",
     "matplotlib>=3.10.8",
-    "numpy>=2.4.2",
+    # Keep NumPy compatible with vLLM's dependencies (e.g. numba).
+    "numpy>=2.2.0,<2.3",
     "opencv-python>=4.13.0.92",
     "optuna>=4.0.0",
     "pandas>=3.0.0",
     "peft>=0.14.0",
-    "torch>=2.10.0",
-    "torchvision>=0.25.0",
+    # Match vLLM's CUDA extension ABI.
+    "torch==2.9.1",
+    "torchvision==0.24.1",
     "transformers>=5.2.0",
     "wandb>=0.18.0",
 ]

@@ -80,6 +80,17 @@ def _parse_args() -> argparse.Namespace:
         "--patch-size", type=int, nargs=2, default=(224, 224), metavar=("H", "W")
     )
     p.add_argument(
+        "--foveated-patches",
+        action="store_true",
+        help="Apply separable foveated resampling to each extracted patch (output stays patch-size).",
+    )
+    p.add_argument(
+        "--foveated-k",
+        type=float,
+        default=2.0,
+        help="Foveation strength for --foveated-patches (0=uniform).",
+    )
+    p.add_argument(
         "--max-fixations",
         type=int,
         default=12,
@@ -175,6 +186,18 @@ def _crop_patch_rgb(
     left = cx_p - (pW // 2)
     patch = arr_p[top : top + pH, left : left + pW]
     return Image.fromarray(patch, mode="RGB")
+
+
+def _foveate_patch_rgb(patch_rgb: Image.Image, *, k: float) -> Image.Image:
+    # Keep the output size the same as the patch size; this just redistributes sampling
+    # density so the center is sharper and edges are lower-acuity.
+    from saccade.separable_variable_density_foveated import foveated_downscale
+
+    arr = np.asarray(patch_rgb)  # [H,W,3] uint8
+    if arr.ndim != 3 or arr.shape[2] != 3:
+        raise ValueError(f"Expected RGB patch array [H,W,3], got shape={arr.shape}")
+    out = foveated_downscale(arr, out_size=(int(arr.shape[0]), int(arr.shape[1])), k=float(k))
+    return Image.fromarray(out.astype(np.uint8), mode="RGB")
 
 
 _NUM_RE = re.compile(r"[-+]?\d+(?:\.\d+)?")
@@ -432,6 +455,8 @@ def main() -> None:
         patch = _crop_patch_rgb(
             full_rgb, cx=cx, cy=cy, patch_size=tuple(args.patch_size)
         )
+        if args.foveated_patches:
+            patch = _foveate_patch_rgb(patch, k=float(args.foveated_k))
         patches.append(patch)
 
         # Build messages: (system) + previous (user patch, assistant text) pairs + current user patch.
@@ -522,6 +547,8 @@ def main() -> None:
         "orig_image_size": list(orig_size),
         "resized_image_size": list(full_rgb.size),
         "patch_size": [int(args.patch_size[0]), int(args.patch_size[1])],
+        "foveated_patches": bool(args.foveated_patches),
+        "foveated_k": float(args.foveated_k),
         "start_xy": [int(x0), int(y0)],
         "fixation_xy": [[int(x), int(y)] for x, y in fixations],
         "assistant_outputs": outputs,

@@ -30,12 +30,21 @@ def foveated_downscale(image, out_size=300, k=2.0, center=None):
     Parameters
     ----------
     image    : (H, W, 3) input
-    out_size : output is (out_size, out_size)
+    out_size : output size (square int) or (out_h, out_w)
     k        : foveation strength. 0 = uniform resize, higher = stronger.
                Typical range: 1.0 (mild) to 4.0 (aggressive)
     center   : (cx, cy) fixation point in input coords, default = center
     """
     h_in, w_in = image.shape[:2]
+    if isinstance(out_size, (tuple, list, np.ndarray)):
+        if len(out_size) != 2:
+            raise ValueError(f"out_size must be an int or (out_h, out_w), got {out_size!r}")
+        out_h, out_w = int(out_size[0]), int(out_size[1])
+    else:
+        out_h = out_w = int(out_size)
+    if out_h <= 0 or out_w <= 0:
+        raise ValueError(f"out_size must be positive, got {(out_h, out_w)!r}")
+
     if center is None:
         center = (w_in / 2.0, h_in / 2.0)
     cx, cy = center
@@ -67,10 +76,10 @@ def foveated_downscale(image, out_size=300, k=2.0, center=None):
         return input_coords.astype(np.float32)
 
     # Build 2D sample grid (separable = independent x and y)
-    grid_x = make_grid_1d(out_size, w_in, cx)  # shape (out_size,)
-    grid_y = make_grid_1d(out_size, h_in, cy)  # shape (out_size,)
+    grid_x = make_grid_1d(out_w, w_in, cx)  # shape (out_w,)
+    grid_y = make_grid_1d(out_h, h_in, cy)  # shape (out_h,)
 
-    map_x, map_y = np.meshgrid(grid_x, grid_y)  # (out_size, out_size)
+    map_x, map_y = np.meshgrid(grid_x, grid_y)  # (out_h, out_w)
 
     out = cv2.remap(
         image, map_x, map_y, interpolation=cv2.INTER_AREA, borderMode=cv2.BORDER_REFLECT
