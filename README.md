@@ -2,7 +2,7 @@
 
 ## Download COCO-Search18
 ```bash
-bash download_coco_search18.sh
+bash scripts/download_coco_search18.sh
 ```
 
 ## Torch Dataset
@@ -27,6 +27,21 @@ uv run -m saccade.visualize_coco_search18_example --idx 0 --max-fix 12 --boxes
 Headless (save PNGs):
 ```bash
 uv run -m saccade.visualize_coco_search18_example --idx 0 --max-fix 12 --out-dir ./vis --no-show
+```
+
+## Roll Out The Trained Policy (LLM Trajectory)
+This runs the trained Qwen3-VL+LoRA policy in a closed loop: it predicts the next fixation from
+the current patch until it emits `FOUND`/`NOT_FOUND` (or hits `--max-fixations`), then saves a PNG
+trajectory visualization and a JSON log.
+
+Dataset mode (pick an index, uses that image + target):
+```bash
+uv run -m saccade.rollout_qwen3vl_gaze --idx 0 --out-dir ./vis/rollouts --no-show --boxes
+```
+
+Arbitrary image mode:
+```bash
+uv run -m saccade.rollout_qwen3vl_gaze --image-path path/to/img.jpg --target "cup" --out-dir ./vis/rollouts --no-show --boxes
 ```
 
 ## Train (Qwen3-VL + LoRA)
