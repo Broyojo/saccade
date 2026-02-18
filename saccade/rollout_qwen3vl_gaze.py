@@ -191,14 +191,17 @@ def _parse_reply(text: str) -> tuple[str, Any]:
     if not s:
         return ("error", "empty")
 
+    s_up = s.upper()
+    s_compact = re.sub(r"[\s\-]+", "_", s_up)
+
     # Prefer NOT_FOUND over FOUND since it contains the substring "FOUND".
-    if "NOT_FOUND" in s:
+    if ("NOT_FOUND" in s_compact) or ("NOTFOUND" in s_compact) or ("ABSENT" in s_up) or ("NOT_PRESENT" in s_compact):
         return ("final", FINAL_NOT_FOUND)
-    if "FOUND" in s:
+    if ("FOUND" in s_up) or ("PRESENT" in s_up):
         return ("final", FINAL_FOUND)
 
     # Handle boxed variants like \boxed{FOUND}.
-    m = re.search(r"\\boxed\{(FOUND|NOT_FOUND)\}", s)
+    m = re.search(r"\\boxed\{(FOUND|NOT_FOUND)\}", s_up)
     if m:
         return ("final", m.group(1))
 

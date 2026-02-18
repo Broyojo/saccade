@@ -67,6 +67,13 @@ Real run (uses W&B):
 uv run -m saccade.train_sft_qwen3vl_gaze --wandb-project saccade
 ```
 
+## Eval (Present/Absent)
+Roll out the model on TP+TA and score whether it predicts `FOUND` (present) vs `NOT_FOUND` (absent).
+
+```bash
+uv run -m saccade.eval_rollout_qwen3vl_gaze --split valid --condition all --max-fixations 12 --force-final
+```
+
 ## Hyperparameter Sweep (Optuna)
 This runs small, prunable training runs and optimizes `eval_loss`.
 
