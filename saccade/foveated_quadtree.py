@@ -144,6 +144,19 @@ def visualize(image, patches, meta, patch_size=64):
     return vis_src, vis_tokens
 
 
+def reconstruct(image_shape, patches, meta, patch_size=64):
+    """Reconstruct the image from tokens — upscale each patch back into its cell."""
+    h, w = image_shape[:2]
+    recon = np.zeros((h, w, 3), dtype=np.uint8)
+    for patch, m in zip(patches, meta):
+        x1, y1, x2, y2 = m["x1"], m["y1"], m["x2"], m["y2"]
+        upscaled = cv2.resize(
+            patch, (x2 - x1, y2 - y1), interpolation=cv2.INTER_NEAREST
+        )
+        recon[y1:y2, x1:x2] = upscaled
+    return recon
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("image")
@@ -170,8 +183,10 @@ def main():
     )
 
     vis_src, vis_tokens = visualize(img, patches, meta, args.patch_size)
+    recon = reconstruct(img.shape, patches, meta, args.patch_size)
     cv2.imwrite(f"{args.output}_source.png", vis_src)
     cv2.imwrite(f"{args.output}_tokens.png", vis_tokens)
+    cv2.imwrite(f"{args.output}_recon.png", recon)
 
     print(f"Image:       {w} x {h} ({w * h:,} px)")
     print(f"Tokens:      {len(patches)} patches of {args.patch_size}x{args.patch_size}")
