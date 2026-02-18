@@ -51,3 +51,15 @@ Real run (uses W&B):
 ```bash
 uv run -m saccade.train_sft_qwen3vl_gaze --wandb-project saccade
 ```
+
+## Hyperparameter Sweep (Optuna)
+This runs small, prunable training runs and optimizes `eval_loss`.
+
+```bash
+uv run -m saccade.sweep_optuna_qwen3vl_gaze --n-trials 30 --max-steps 200 --eval-steps 50 --resume
+```
+
+Or:
+```bash
+bash scripts/sweep_optuna.sh
+```
